@@ -12,6 +12,5 @@ Route::group([
     'as' => 'sso.',
     'prefix' => 'sso'
 ], function () {
-    Route::get('broker', ['as' => 'broker', 'uses' => 'Venespana\Sso\Http\Controllers\BrokerController@token']);
-    Route::get('broker/{token}', ['as' => 'broker.token', 'uses' => 'Venespana\Sso\Http\Controllers\BrokerController@show']);
+    Route::match(array('GET', 'POST'), '', ['as' => 'server', 'uses' => 'Venespana\Sso\Http\Controllers\ServerController']);
 });
