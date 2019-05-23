@@ -1,5 +1,6 @@
 <?php
 
+use Venespana\Sso\Core\AuthSystem;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
@@ -14,12 +15,14 @@ class CreateBrokersTable extends Migration
      */
     public function up()
     {
-        Schema::create(config('sso.broker_table', 'brokers'), function (Blueprint $table) {
-            $table->bigIncrements('id');
-            $table->string('name')->comment('Broker name');
-            $table->string('hash')->unique()->comment('Broker unique hash identifiactor');
-            $table->string('secret')->comment('secret key to make hand shake');
-        });
+        if (AuthSystem::isServer()) {
+            Schema::create(config('sso.broker_table', 'brokers'), function (Blueprint $table) {
+                $table->bigIncrements('id');
+                $table->string('name')->comment('Broker name');
+                $table->string('hash')->unique()->comment('Broker unique hash identifiactor');
+                $table->string('secret')->comment('secret key to make hand shake');
+            });
+        }
     }
 
     /**
