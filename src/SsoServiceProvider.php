@@ -19,12 +19,6 @@ class SsoServiceProvider extends ServiceProvider
             'auth_system'
         );
 
-        //     $this->loadViewsFrom(__DIR__.'/../resources/views', 'partners');
-
-        //     Module::load();
-
-        //     $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
-
         if (AuthSystem::isServer()) {
             $this->loadRoutesFrom(__DIR__.'/../routes/sso.php');
             $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
