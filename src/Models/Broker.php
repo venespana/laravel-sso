@@ -21,7 +21,7 @@ class Broker extends Model
     {
         $this->attributes['name'] = $name;
 
-        $this->attributes['hash'] = uniqid('', true);
+        $this->attributes['hash'] = str_replace('.', '', uniqid('', true));
         $this->attributes['secret'] = Str::random(32);
     }
     
