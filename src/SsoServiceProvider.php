@@ -15,13 +15,17 @@ class SsoServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->mergeConfigFrom(
-            __DIR__.'/../configs/configs.php',
+            __DIR__ . '/../configs/configs.php',
             'auth_system'
         );
 
+        $this->publishes([
+            __DIR__ . '/../configs/configs.php' => config_path('auth_system.php')
+        ], 'auth_system');
+
         if (AuthSystem::isServer()) {
-            $this->loadRoutesFrom(__DIR__.'/../routes/sso.php');
-            $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+            $this->loadRoutesFrom(__DIR__ . '/../routes/sso.php');
+            $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
             $this->commands([
                 \Venespana\Sso\Console\Commands\Sso\Create::class
             ]);
@@ -29,6 +33,5 @@ class SsoServiceProvider extends ServiceProvider
     }
 
     public function register()
-    {
-    }
+    { }
 }
