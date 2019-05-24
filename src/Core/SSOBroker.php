@@ -8,6 +8,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
 use Venespana\Sso\Core\AuthSystem;
 use Jasny\SSO\NotAttachedException;
+use Illuminate\Support\Facades\Auth;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ServerException;
 
@@ -58,15 +59,13 @@ class SSOBroker extends Broker
         $body = json_decode($body, true) ?? $body;
 
         $message = $body['message'];
-    
+        $data = $body['error'] ?? $body['data'] ?? null;
+
         if ($status === 403 || $status === 401) {
             $this->clearToken();
-            throw new NotAttachedException($message, $status);
-        } elseif ($status >= 400) {
-            throw new Exception($message, $status);
         }
 
-        return $body;
+        return $data;
     }
 
     /**
@@ -79,11 +78,26 @@ class SSOBroker extends Broker
         parent::attach($returnUrl);
     }
 
+    /**
+     * Get user information.
+     *
+     * @return object|null
+     */
+    public function getUserInfo()
+    {
+        if (!isset($this->userinfo)) {
+            $this->userinfo = $this->request('GET', 'userInfo');
+        }
+
+        return $this->userinfo;
+    }
+
     public function loginCurrentUser($returnUrl = '/home')
     {
-        if ($user = $this->getUserInfo()) {
+        $user = $this->getUserInfo();
+        if ($user) {
             Auth::loginUsingId($user['id']);
-            return redirect($returnUrl);
         }
+        return redirect($returnUrl);
     }
 }
