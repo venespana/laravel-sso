@@ -5,6 +5,7 @@ namespace Venespana\Sso\Core;
 use Jasny\SSO\Server;
 use Jasny\ValidationResult;
 use Venespana\Sso\Models\Broker;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request;
 use Venespana\Sso\Http\Controllers\Controller;
 
@@ -101,6 +102,33 @@ class SSOServer extends Server
 
         $this->cache->set($sid, $this->getSessionData('id'));
         return $this->outputAttachSuccess();
+    }
+
+    /**
+     * Authenticate
+     */
+    public function login()
+    {
+        $this->startBrokerSession();
+
+        $username = Request::get(AuthSystem::username(), '');
+        $password = Request::get('password', '');
+
+        if (empty($username)) {
+            $this->fail("No username specified", 400);
+        }
+        if (empty($password)) {
+            $this->fail("No password specified", 400);
+        }
+
+        $validation = $this->authenticate($username, $password);
+
+        if ($validation->failed()) {
+            return $this->fail($validation->getError(), 400);
+        }
+
+        $this->setSessionData('sso_user', $username);
+        $this->userInfo();
     }
 
     /**

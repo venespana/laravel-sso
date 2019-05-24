@@ -5,7 +5,6 @@ namespace Venespana\Sso\Core;
 use Exception;
 use Jasny\SSO\Broker;
 use GuzzleHttp\Client;
-use GuzzleHttp\Psr7\Request;
 use Venespana\Sso\Core\AuthSystem;
 use Jasny\SSO\NotAttachedException;
 use Illuminate\Support\Facades\Auth;
@@ -33,18 +32,20 @@ class SSOBroker extends Broker
         $url = $this->getRequestUrl($command, !$data || $method === 'POST' ? [] : $data);
         $requestType = strtolower($method);
 
-        $request = new Request($method, $url, [
-            'Accept' => 'application/json',
-            'Authorization' => "Bearer {$this->getSessionID()}"
-        ]);
-
+        $httpData = [
+            'base_uri' => $url,
+            'headers' => [
+                'Accept' => 'application/json',
+                'Authorization' => "Bearer {$this->getSessionID()}"
+            ]
+        ];
         if ($requestType === 'post' && !empty($data)) {
-            $request->setBody($data);
+            $httpData['json'] = $data;
         }
 
-        $client = new Client();
+        $client = new Client($httpData);
         try {
-            $response = $client->send($request);
+            $response = $client->{$requestType}('');
         } catch (ClientException | ServerException $e) {
             $response = $e->getResponse();
             $status = $e->getCode();
@@ -58,11 +59,13 @@ class SSOBroker extends Broker
         $body = $response->getBody()->getContents();
         $body = json_decode($body, true) ?? $body;
 
-        $message = $body['message'];
+        // $message = $body['message'];
         $data = $body['error'] ?? $body['data'] ?? null;
 
         if ($status === 403 || $status === 401) {
             $this->clearToken();
+        } elseif ($status >= 400) {
+            throw new Exception(is_string($data) ? $data : 'message', $status);
         }
 
         return $data;
@@ -95,8 +98,8 @@ class SSOBroker extends Broker
     public function loginCurrentUser($returnUrl = '/home')
     {
         $user = $this->getUserInfo();
-        if ($user) {
-            Auth::loginUsingId($user['id']);
+        if (is_array($user)) {
+            $data = Auth::loginUsingId($user['id']);
         }
         return redirect($returnUrl);
     }
