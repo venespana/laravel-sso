@@ -52,4 +52,9 @@ class AuthSystem
         $secret = config('auth_system.broker_data.secret', '');
         return $secret;
     }
+
+    public static function username(): string
+    {
+        return config('auth_system.login.username', 'email');
+    }
 }

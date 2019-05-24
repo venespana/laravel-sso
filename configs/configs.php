@@ -18,5 +18,10 @@ return [
         'server' => env('SSO_SERVER', null),
         'hash' => env('SSO_BROKER_HASH', null),
         'secret' => env('SSO_BROKER_SECRET', null)
+    ],
+
+    'login' => [
+        'model' => null,
+        'username' => 'username'
     ]
 ];
