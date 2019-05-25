@@ -8,8 +8,10 @@ use GuzzleHttp\Client;
 use Venespana\Sso\Core\AuthSystem;
 use Jasny\SSO\NotAttachedException;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Request;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ServerException;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class SSOBroker extends Broker
 {
@@ -59,13 +61,13 @@ class SSOBroker extends Broker
         $body = $response->getBody()->getContents();
         $body = json_decode($body, true) ?? $body;
 
-        // $message = $body['message'];
+        $message = $body['error'] ?? $body['message'] ?? $body['data'] ?? null;
         $data = $body['error'] ?? $body['data'] ?? null;
 
         if ($status === 403 || $status === 401) {
             $this->clearToken();
         } elseif ($status >= 400) {
-            throw new Exception(is_string($data) ? $data : 'message', $status);
+            throw new Exception(is_string($message) ? $message : 'Undefined error', $status);
         }
 
         return $data;
@@ -78,7 +80,48 @@ class SSOBroker extends Broker
      */
     public function attach($returnUrl = null)
     {
-        parent::attach($returnUrl);
+        if ($this->isAttached()) {
+            return;
+        }
+
+        if ($returnUrl === true) {
+            $protocol = !empty($_SERVER['HTTPS']) ? 'https://' : 'http://';
+            $returnUrl = $protocol . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+        }
+
+        $params = ['return_url' => $returnUrl];
+        $url = $this->getAttachUrl($params);
+
+        throw new HttpResponseException(redirect($url)->with('status', 307)->with('message', "You're redirected to {$url}"));
+    }
+
+    /**
+     * Log the client in at the SSO server.
+     *
+     * Only brokers marked trused can collect and send the user's credentials. Other brokers should omit $username and
+     * $password.
+     *
+     * @param string $username
+     * @param string $password
+     * @return array  user info
+     * @throws Exception if login fails eg due to incorrect credentials
+     */
+    public function login($username = null, $password = null)
+    {
+        if (!isset($username)) {
+            $username = Request::get(AuthSystem::username());
+        }
+        if (!isset($password)) {
+            $password = Request::get('password');
+        }
+
+        $result = $this->request('POST', 'login', [
+            AuthSystem::username() => $username,
+            'password' => $password
+        ]);
+        $this->userinfo = $result;
+
+        return $this->userinfo;
     }
 
     /**
@@ -92,15 +135,41 @@ class SSOBroker extends Broker
             $this->userinfo = $this->request('GET', 'userInfo');
         }
 
-        return $this->userinfo;
+        if (is_array($this->userinfo) && count($this->userinfo) > 0) {
+            foreach (AuthSystem::responseFields() as $key => $value) {
+                $field = $this->userinfo[$value] ?? null;
+                if (is_null($field)) {
+                    continue;
+                }
+                $response[$key] = $field;
+            }
+
+            $this->userinfo = $response;
+        }
+
+        return is_array($this->userinfo) ? $this->userinfo : null;
     }
 
-    public function loginCurrentUser($returnUrl = '/home')
+    public function loginCurrentUser($returnUrl = 'home')
     {
         $user = $this->getUserInfo();
+        $this->authUser($user);
+        return redirect($returnUrl);
+    }
+
+    protected function authUser(?array $user): bool
+    {
+        $result = false;
         if (is_array($user)) {
             $data = Auth::loginUsingId($user['id']);
+            if (!$data) {
+                AuthSystem::model()::create($user);
+                $result = $this->authUser($user);
+            } else {
+                $result = true;
+            }
         }
-        return redirect($returnUrl);
+
+        return $result;
     }
 }
