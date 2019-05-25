@@ -5,6 +5,7 @@ namespace Venespana\Sso\Core;
 use Jasny\SSO\Server;
 use Jasny\ValidationResult;
 use Venespana\Sso\Models\Broker;
+use Venespana\Sso\Core\AuthSystem;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request;
 use Venespana\Sso\Http\Controllers\Controller;
@@ -26,7 +27,7 @@ class SSOServer extends Server
         if (!isset($password)) {
             return ValidationResult::error("password isn't set");
         }
-        if (Auth::attempt(['email' => $username, 'password' => $password])) {
+        if (Auth::attempt([AuthSystem::username() => $username, 'password' => $password])) {
             return ValidationResult::success();
         }
         return ValidationResult::error("can't find user");
@@ -49,7 +50,7 @@ class SSOServer extends Server
 
     /**
      * Output on a successful attach
-     * 
+     *
      * @return array ['type' => string, 'data' => array|string, 'message' => string, 'status' => int]
      */
     protected function outputAttachSuccess(): array
@@ -86,10 +87,16 @@ class SSOServer extends Server
     {
         $this->detectReturnType();
 
-        if (empty($_REQUEST['broker'])) return $this->fail("No broker specified", 400);
-        if (empty($_REQUEST['token'])) return $this->fail("No token specified", 400);
+        if (empty($_REQUEST['broker'])) {
+            return $this->fail("No broker specified", 400);
+        }
+        if (empty($_REQUEST['token'])) {
+            return $this->fail("No token specified", 400);
+        }
 
-        if (!$this->returnType) return $this->fail("No return url specified", 400);
+        if (!$this->returnType) {
+            return $this->fail("No return url specified", 400);
+        }
 
         $checksum = $this->generateAttachChecksum($_REQUEST['broker'], $_REQUEST['token']);
 
@@ -128,7 +135,7 @@ class SSOServer extends Server
         }
 
         $this->setSessionData('sso_user', $username);
-        $this->userInfo();
+        return $this->userInfo();
     }
 
     /**
@@ -139,14 +146,24 @@ class SSOServer extends Server
      */
     protected function getUserInfo($username)
     {
-        // $user = User::where('email', $username)->first();
-        // return $user ? $user : null;
+        $user = AuthSystem::model()::where(AuthSystem::username(), $username)->first();
+        $response = [];
+        foreach (AuthSystem::responseFields() as $key => $value) {
+            $field = $user->{$value} ?? null;
+            if (is_null($field)) {
+                continue;
+            }
+            $response[$key] = $field;
+        }
+        return count($response) > 0 ? $response : $user;
     }
 
     /**
      * Return the user information
+     *
+     * @return array|object|null
      */
-    public function userInfo(): ?array
+    public function userInfo()
     {
         $this->startBrokerSession();
         $user = null;

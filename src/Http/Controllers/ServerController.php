@@ -22,6 +22,9 @@ class ServerController extends Controller
         if (!is_null($method) && method_exists($sso, $method)) {
             if ($response = $sso->{$method}()) {
                 $statusCode = Arr::get($response, 'status', 200);
+                if ($statusCode === 200) {
+                    $message = 'OK';
+                }
                 $data = Arr::get($response, 'data', $response);
                 $type = Arr::get($response, 'type', $type);
             } else {
