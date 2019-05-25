@@ -11,17 +11,42 @@ return [
      */
     'type' => 'hybrid',
 
+
+    /*
+     |--------------------------------------------------------------------------
+     | Settings necessary for the SSO server.
+     |--------------------------------------------------------------------------
+     |
+     | These settings should be changed if this page is working as SSO server.
+     |
+     */
+    
     'broker_table' => 'brokers',
     'cache_prefix' => 'venespana_sso.',
+
+    'login' => [
+        'model' => \App\User::class,
+        'username' => 'username',
+
+        // Logged in user fields sent to brokers.
+        'response_fields' => [
+            'id' => 'id',
+            'username' => 'name'
+        ]
+    ],
+
+    /*
+     |--------------------------------------------------------------------------
+     | Settings necessary for the SSO broker.
+     |--------------------------------------------------------------------------
+     |
+     | These settings should be changed if this page is working as SSO broker.
+     |
+     */
 
     'broker_data' => [
         'server' => env('SSO_SERVER', null),
         'hash' => env('SSO_BROKER_HASH', null),
         'secret' => env('SSO_BROKER_SECRET', null)
     ],
-
-    'login' => [
-        'model' => null,
-        'username' => 'username'
-    ]
 ];
