@@ -2,6 +2,8 @@
 
 namespace Venespana\Sso\Core;
 
+use Illuminate\Foundation\Auth\User;
+
 class AuthSystem
 {
     public const SERVER = 'server';
@@ -56,5 +58,15 @@ class AuthSystem
     public static function username(): string
     {
         return config('auth_system.login.username', 'email');
+    }
+
+    public static function model(): string
+    {
+        return config('auth_system.login.model', User::class);
+    }
+
+    public static function responseFields(): array
+    {
+        return config('auth_system.login.response_fields', []);
     }
 }
