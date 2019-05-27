@@ -20,13 +20,17 @@ return [
      | These settings should be changed if this page is working as SSO server.
      |
      */
-    
+
     'broker_table' => 'brokers',
     'cache_prefix' => 'venespana_sso.',
 
     'login' => [
         'model' => \App\User::class,
         'username' => 'username',
+        'user_id_field' => 'id',
+
+        // Url to login system
+        'url' => env('SSO_SERVER_LOGIN', null),
 
         // Logged in user fields sent to brokers.
         'response_fields' => [

@@ -11,10 +11,13 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ServerException;
+use Venespana\Sso\Core\Traits\SSORedirection;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 class SSOBroker extends Broker
 {
+    use SSORedirection;
+
     public function __construct()
     {
         $serverUrl = AuthSystem::serverUrl();
@@ -151,14 +154,15 @@ class SSOBroker extends Broker
     {
         $user = $this->getUserInfo();
         $this->authUser($user);
-        return redirect($returnUrl);
+
+        $this->redirectTo($returnUrl);
     }
 
     protected function authUser(?array $user): bool
     {
         $result = false;
         if (is_array($user)) {
-            $data = Auth::loginUsingId($user['id']);
+            $data = Auth::loginUsingId($user[AuthSystem::userIdField()]);
             if (!$data) {
                 AuthSystem::model()::create($user);
                 $result = $this->authUser($user);

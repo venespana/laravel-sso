@@ -21,7 +21,7 @@ class AuthSystem
         return static::is(static::SERVER) || static::is(static::HYBRID);
     }
 
-    public static function siBroker(): bool
+    public static function isBroker(): bool
     {
         return static::is(static::BROKER) || static::is(static::HYBRID);
     }
@@ -68,5 +68,17 @@ class AuthSystem
     public static function responseFields(): array
     {
         return config('auth_system.login.response_fields', []);
+    }
+
+    public static function loginUrl(): string
+    {
+        $url = config('auth_system.login.url', '');
+        return $url;
+    }
+
+    public static function userIdField(): string
+    {
+        $idField = config('auth_system.login.user_id_field', 'id');
+        return $idField;
     }
 }
