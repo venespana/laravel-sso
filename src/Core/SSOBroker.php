@@ -138,9 +138,6 @@ class SSOBroker extends Broker
         if (is_array($this->userinfo) && count($this->userinfo) > 0) {
             foreach (AuthSystem::responseFields() as $key => $value) {
                 $field = $this->userinfo[$value] ?? null;
-                if (is_null($field)) {
-                    continue;
-                }
                 $response[$key] = $field;
             }
 
