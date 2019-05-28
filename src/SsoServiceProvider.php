@@ -30,6 +30,10 @@ class SsoServiceProvider extends ServiceProvider
                 \Venespana\Sso\Console\Commands\Sso\Create::class
             ]);
         }
+
+        if (AuthSystem::isBroker()) {
+            require_once __DIR__ . '/Core/Blade/Broker.php';
+        }
     }
 
     public function register()
