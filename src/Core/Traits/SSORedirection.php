@@ -9,14 +9,15 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 
 trait SSORedirection
 {
-    protected function redirectTo(string $returnUrl = null)
+    public function redirectTo(string $returnUrl = null)
     {
         if (AuthSystem::isBroker()) {
             $url = $this->redirectBroker($returnUrl);
         }
 
         if ($url) {
-            throw new HttpResponseException(redirect($url)->with('status', 307)->with('message', "You're redirected to {$returnUrl}"));
+            throw new HttpResponseException(redirect($url)->with('status', 307)
+                ->with('message', "You're redirected to {$returnUrl}"));
         }
     }
 
@@ -24,14 +25,20 @@ trait SSORedirection
     {
         $user = Auth::user();
         $url = null;
+        $currUrl = url()->full();
+        $loginUrl = AuthSystem::loginUrl();
 
-        if (!$user) {
+        if (!$user && $currUrl !== $loginUrl) {
             $data = http_build_query([
                 'broker' => url()->full()
             ]);
-            $url = "{$returnUrl}?{$data}";
+            $url =  "{$loginUrl}?{$data}";
         } else {
             $url = Request::get('broker', null);
+        }
+
+        if (is_null($url)) {
+            $url = $returnUrl;
         }
 
         return $url;

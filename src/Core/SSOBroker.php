@@ -95,7 +95,9 @@ class SSOBroker extends Broker
         $params = ['return_url' => $returnUrl];
         $url = $this->getAttachUrl($params);
 
-        throw new HttpResponseException(redirect($url)->with('status', 307)->with('message', "You're redirected to {$url}"));
+        throw new HttpResponseException(redirect($url)
+            ->with('status', 307)
+            ->with('message', "You're redirected to {$url}"));
     }
 
     /**
@@ -150,7 +152,15 @@ class SSOBroker extends Broker
         return is_array($this->userinfo) ? $this->userinfo : null;
     }
 
-    public function loginCurrentUser($returnUrl = 'home')
+    /**
+     * Redirect to selected url when user is login and return to
+     * url seted in configs "auth_system.login.url" if unatenticted
+     *
+     * @param string $returnUrl
+     * @param boolean $keepInBroker
+     * @return void
+     */
+    public function loginCurrentUser($returnUrl = '')
     {
         $user = $this->getUserInfo();
         $this->authUser($user);
@@ -161,7 +171,11 @@ class SSOBroker extends Broker
     protected function authUser(?array $user): bool
     {
         $result = false;
-        if (is_array($user)) {
+        if (Auth::user()) {
+            $result = true;
+        }
+
+        if (is_array($user) && !$result) {
             $data = Auth::loginUsingId($user[AuthSystem::userIdField()]);
             if (!$data) {
                 AuthSystem::model()::create($user);

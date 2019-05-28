@@ -2,6 +2,7 @@
 
 namespace Venespana\Sso\Core;
 
+use Illuminate\Support\Facades\URL;
 use Illuminate\Foundation\Auth\User;
 
 class AuthSystem
@@ -73,6 +74,10 @@ class AuthSystem
     public static function loginUrl(): string
     {
         $url = config('auth_system.login.url', '');
+
+        if (is_null($url)) {
+            $url = URL::to('/');
+        }
         return $url;
     }
 
@@ -80,5 +85,11 @@ class AuthSystem
     {
         $idField = config('auth_system.login.user_id_field', 'id');
         return $idField;
+    }
+
+    public static function brokerRedirUrl(): ?string
+    {
+        $url = \Request::get('broker', null);
+        return $url;
     }
 }
